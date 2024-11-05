@@ -1,35 +1,53 @@
-name: CMake Build
+name: Build
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
+  VCPKG_ROOT: C:\vcpkg
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Install Chocolatey
-        run: |
-          Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
-      - name: Install CMake
-        run: choco install cmake --version=3.21.0 --yes
+    - name: Setup vcpkg
+      run: |
+        mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        cd $env:VCPKG_INSTALLATION_ROOT
+        ./bootstrap-vcpkg.bat
+        ./vcpkg --version > ${{ github.workspace }}/vcpkg-version.txt
 
-      - name: Check out the code
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive 
+    - name: Cache vcpkg
+      uses: actions/cache@v4
+      id: vcpkg-cache
+      env:
+        cache-name: vcpkg-cache
+      with:
+        path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('main/**/vcpkg.json', 'vcpkg-version.txt') }}
 
-      - name: Install vcpkg
-        run: |
-          git clone https://github.com/microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
+    - name: Configure CMake
+      run: |
+        cmake --preset vs2022-windows-vcpkg-release -Wno-deprecated
 
-      - name: Configure CMake with Preset and vcpkg
-        run: |
-          cmake --preset vs2022-windows-vcpkg-release -DCMAKE_TOOLCHAIN_FILE=%CD%\vcpkg\scripts\buildsystems\vcpkg.cmake
+    - name: Build
+      run: |
+        cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }}
+        cmake --build ${{ github.workspace }}/buildVR --config ${{ env.BUILD_TYPE }}
 
-      - name: Build with CMake in Release mode
-        run: cmake --build build --config Release
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: CombatMusic
+        path: ${{ github.workspace }}/build
