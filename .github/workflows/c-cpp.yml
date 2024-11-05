@@ -3,20 +3,17 @@ name: CMake Build
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Check out the code
         uses: actions/checkout@v2
         with:
           submodules: recursive
-
-      - name: Install CMake
-        run: sudo apt-get install -y cmake
 
       - name: Configure CMake with Preset
         run: cmake --preset vs2022-windows
