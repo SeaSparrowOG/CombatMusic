@@ -16,7 +16,7 @@ jobs:
           submodules: recursive
 
       - name: Configure CMake with Preset
-        run: cmake --preset vs2022-windows
+        run: cmake --preset vs2022-windows-vcpkg-release
 
       - name: Build with CMake in Release mode
         run: cmake --build build --config Release
