@@ -13,10 +13,16 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v2
         with:
-          submodules: recursive
+          submodules: recursive 
 
-      - name: Configure CMake with Preset
-        run: cmake --preset vs2022-windows-vcpkg-release
+      - name: Install vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git
+          .\vcpkg\bootstrap-vcpkg.bat
+
+      - name: Configure CMake with Preset and vcpkg
+        run: |
+          cmake --preset vs2022-windows-vcpkg-release -DCMAKE_TOOLCHAIN_FILE=%CD%\vcpkg\scripts\buildsystems\vcpkg.cmake
 
       - name: Build with CMake in Release mode
         run: cmake --build build --config Release
