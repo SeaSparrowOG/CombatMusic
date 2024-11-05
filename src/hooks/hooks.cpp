@@ -9,7 +9,7 @@ namespace Hooks {
 
 	bool CombatMusicCalls::Install()
 	{
-		SKSE::AllocTrampoline(28);
+		SKSE::AllocTrampoline(42);
 		auto& trampoline = SKSE::GetTrampoline();
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget1{ REL::ID(46870), 0x1C1 };
@@ -18,9 +18,9 @@ namespace Hooks {
 		REL::Relocation<std::uintptr_t> combatMusicTarget2{ REL::ID(46870), 0x22D };
 		_endCombatMusic = trampoline.write_call<5>(combatMusicTarget2.address(), &EndCombatMusic);
 
-		// Not needed
-		// REL::Relocation<std::uintptr_t> combatMusicTarget3{ REL::ID(18369), 0x173 };
-		// _clearLocation = trampoline.write_call<5>(combatMusicTarget3.address(), &ClearLocation);
+		// Not needed?
+		REL::Relocation<std::uintptr_t> combatMusicTarget3{ REL::ID(18369), 0x173 };
+		_clearLocation = trampoline.write_call<5>(combatMusicTarget3.address(), &ClearLocation);
 		return true;
 	}
 
@@ -32,6 +32,14 @@ namespace Hooks {
 	void CombatMusicCalls::SetCurrentCombatMusic(RE::BGSMusicType* a_combatMusic)
 	{
 		storedMusic = a_combatMusic;
+	}
+
+	void CombatMusicCalls::PushNewMusic(ConditionalBattleMusic&& newMusic)
+	{
+		if (newMusic.conditions.empty()) {
+			return;
+		}
+		conditionalMusic.push_back(std::move(newMusic));
 	}
 
 	RE::BGSMusicType* CombatMusicCalls::GetAppropriateMusic(RE::BGSMusicType* a_music)
@@ -48,6 +56,19 @@ namespace Hooks {
 			return a_music;
 		}
 
+		RE::BGSMusicType* newMusic = nullptr;
+		int bestMatch = 0;
+		for (const auto& candidate : conditionalMusic) {
+			const auto candidateMatch = candidate.MatchDegree();
+			if (candidateMatch > bestMatch) {
+				bestMatch = candidateMatch;
+				newMusic = candidate.music;
+			}
+		}
+
+		if (newMusic) {
+			return newMusic;
+		}
 		return a_music;
 	}
 
@@ -81,6 +102,7 @@ namespace Hooks {
 
 	RE::BGSMusicType* CombatMusicCalls::ClearLocation(int a1)
 	{
-		return CombatMusicCalls::GetSingleton()->ClearMusic();
+		const auto response = _clearLocation(a1);
+		return response;
 	}
 }
