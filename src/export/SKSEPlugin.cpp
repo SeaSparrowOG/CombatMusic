@@ -1,5 +1,7 @@
 #include "hooks/hooks.h"
 #include "Papyrus/papyrus.h"
+#include "serialization/serde.h"
+#include "settings/JSONSettings.h"
 
 namespace
 {
@@ -64,6 +66,7 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 {
 	switch (a_msg->type) {
 	case SKSE::MessagingInterface::kDataLoaded:
+		JSONSettings::Read();
 		break;
 	default:
 		break;
@@ -88,5 +91,11 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	Hooks::Install();
 	SKSE::GetPapyrusInterface()->Register(Papyrus::RegisterFunctions);
+
+	const auto serialization = SKSE::GetSerializationInterface();
+	serialization->SetUniqueID(Serialization::ID);
+	serialization->SetSaveCallback(&Serialization::SaveCallback);
+	serialization->SetLoadCallback(&Serialization::LoadCallback);
+	serialization->SetRevertCallback(&Serialization::RevertCallback);
 	return true;
 }

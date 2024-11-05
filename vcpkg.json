@@ -1,14 +1,13 @@
 {
-  "name": "replaceme",
+  "name": "combatmusic",
   "version-string": "1.0.0",
-  "description": "Template for SKSE plugin built using my commonlib. MIT License by default.",
+  "description": "An SKSE plugin for dynamically changing the game's combat music.",
   "homepage": "",
   "license": "MIT",
   "dependencies": [
     "fmt",
     "rsm-binary-io",
     "spdlog",
-    "clib-util",
     "jsoncpp",
     "xbyak"
   ],
