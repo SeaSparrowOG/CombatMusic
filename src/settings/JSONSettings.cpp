@@ -7,7 +7,7 @@ namespace JSONSettings
 {
 	static std::vector<std::string> findJsonFiles()
 	{
-		static constexpr std::string_view directory = R"(Data/SKSE/Plugins/StaffEnchanting)";
+		static constexpr std::string_view directory = R"(Data/SKSE/Plugins/CombatMusic)";
 		std::vector<std::string> jsonFilePaths;
 		for (const auto& entry : std::filesystem::directory_iterator(directory)) {
 			if (entry.is_regular_file() && entry.path().extension() == ".json") {

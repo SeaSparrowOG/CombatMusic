@@ -88,9 +88,6 @@ namespace Hooks {
 					if (condition->IsTrue()) {
 						response++;
 					}
-					else {
-						return 0;
-					}
 				}
 				return response;
 			}
