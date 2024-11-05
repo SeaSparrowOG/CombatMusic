@@ -1,25 +1,53 @@
-name: CMake Build
+name: Build
 
 on:
   push:
-    branches:
-      - master
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
+  VCPKG_ROOT: C:\vcpkg
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      - name: Check out the code
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
-      - name: Install CMake
-        run: sudo apt-get install -y cmake
+    - name: Setup vcpkg
+      run: |
+        mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        cd $env:VCPKG_INSTALLATION_ROOT
+        ./bootstrap-vcpkg.bat
+        ./vcpkg --version > ${{ github.workspace }}/vcpkg-version.txt
 
-      - name: Configure CMake with Preset
-        run: cmake --preset vs2022-windows
+    - name: Cache vcpkg
+      uses: actions/cache@v4
+      id: vcpkg-cache
+      env:
+        cache-name: vcpkg-cache
+      with:
+        path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('main/**/vcpkg.json', 'vcpkg-version.txt') }}
 
-      - name: Build with CMake in Release mode
-        run: cmake --build build --config Release
+    - name: Configure CMake
+      run: |
+        cmake --preset vs2022-windows-vcpkg-release -Wno-deprecated
+
+    - name: Build
+      run: |
+        cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }}
+        cmake --build ${{ github.workspace }}/buildVR --config ${{ env.BUILD_TYPE }}
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: CombatMusic
+        path: ${{ github.workspace }}/build
