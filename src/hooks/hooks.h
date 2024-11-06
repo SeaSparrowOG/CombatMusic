@@ -10,6 +10,7 @@ namespace Hooks {
 	public:
 		struct Condition {
 			virtual bool IsTrue() const = 0;
+			bool AND;
 		};
 
 		struct CombatTargetCondition : public Condition {
@@ -134,6 +135,9 @@ namespace Hooks {
 				for (const auto& condition : conditions) {
 					if (condition->IsTrue()) {
 						response++;
+					}
+					else if (condition->AND) {
+						return 0;
 					}
 				}
 				return response;
