@@ -67,12 +67,6 @@ namespace JSONSettings
 				}
 
 				bool errorOccured = false;
-				bool isANDConditions = false;
-
-				const auto andField = entry["AND"];
-				if (andField && andField.isBool()) {
-					isANDConditions = andField.asBool();
-				}
 
 				auto entryWorldspaceCondition = Hooks::CombatMusicCalls::WorldspaceCondition();
 				const auto& entryWorldspaces = entry["worldspaces"];
@@ -107,8 +101,8 @@ namespace JSONSettings
 				auto entryCombatTargetCondition = Hooks::CombatMusicCalls::CombatTargetCondition();
 				const auto& entryCombatTarget = entry["combatTarget"];
 				if (entryCombatTarget && entryCombatTarget.isObject()) {
-					const auto& conditionArray = entryWorldspaces["forms"];
-					const auto& conditionAND = entryWorldspaces["AND"];
+					const auto& conditionArray = entryCombatTarget["forms"];
+					const auto& conditionAND = entryCombatTarget["AND"];
 					if (!conditionArray || !conditionArray.isArray() || !conditionAND || !conditionAND.isBool()) {
 						logger::warn("<{}> contains a combatTarget condition that is missing or has incorrect setup.", path);
 						continue;
@@ -136,9 +130,9 @@ namespace JSONSettings
 
 				auto entryCombatTargetKeywordsCondition = Hooks::CombatMusicCalls::CombatTargetKeywordCondition();
 				const auto& entryTargetKeywords = entry["combatTargetKeywords"];
-				if (entryTargetKeywords && entryTargetKeywords.isArray()) {
-					const auto& conditionArray = entryWorldspaces["forms"];
-					const auto& conditionAND = entryWorldspaces["AND"];
+				if (entryTargetKeywords && entryTargetKeywords.isObject()) {
+					const auto& conditionArray = entryTargetKeywords["forms"];
+					const auto& conditionAND = entryTargetKeywords["AND"];
 					if (!conditionArray || !conditionArray.isArray() || !conditionAND || !conditionAND.isBool()) {
 						logger::warn("<{}> contains a combatTarget condition that is missing or has incorrect setup.", path);
 						continue;
@@ -167,9 +161,9 @@ namespace JSONSettings
 
 				auto entryCellCondition = Hooks::CombatMusicCalls::CellCondition();
 				const auto& entryCells = entry["cells"]; 
-				if (entryCells && entryCells.isArray()) {
-					const auto& conditionArray = entryWorldspaces["forms"];
-					const auto& conditionAND = entryWorldspaces["AND"];
+				if (entryCells && entryCells.isObject()) {
+					const auto& conditionArray = entryCells["forms"];
+					const auto& conditionAND = entryCells["AND"];
 					if (!conditionArray || !conditionArray.isArray() || !conditionAND || !conditionAND.isBool()) {
 						logger::warn("<{}> contains a combatTarget condition that is missing or has incorrect setup.", path);
 						continue;
@@ -198,9 +192,9 @@ namespace JSONSettings
 
 				auto entryLocationCondition = Hooks::CombatMusicCalls::LocationCondition();
 				const auto& entryLocations = entry["locations"];
-				if (entryLocations && entryLocations.isArray()) {
-					const auto& conditionArray = entryWorldspaces["forms"];
-					const auto& conditionAND = entryWorldspaces["AND"];
+				if (entryLocations && entryLocations.isObject()) {
+					const auto& conditionArray = entryLocations["forms"];
+					const auto& conditionAND = entryLocations["AND"];
 					if (!conditionArray || !conditionArray.isArray() || !conditionAND || !conditionAND.isBool()) {
 						logger::warn("<{}> contains a combatTarget condition that is missing or has incorrect setup.", path);
 						continue;
@@ -258,31 +252,31 @@ namespace JSONSettings
 				Hooks::CombatMusicCalls::GetSingleton()->PushNewMusic(std::move(newCombatMusic));
 				logger::info("Created new combat music: ");
 				if (!entryWorldspaceCondition.worldspaces.empty()) {
-					logger::info("  >Music will apply to these worldspaces ([]):", entryWorldspaceCondition.AND ? "AND" : "OR");
+					logger::info("  >Music will apply to these worldspaces ({}):", entryWorldspaceCondition.AND ? "AND" : "OR");
 					for (const auto& string : entryWorldspaceCondition.worldspaces) {
 						logger::info("    [{}]", string->GetFormEditorID());
 					}
 				}
 				if (!entryCellCondition.cells.empty()) {
-					logger::info("  >Music will apply to these cells: ([]):", entryCellCondition.AND ? "AND" : "OR");
+					logger::info("  >Music will apply to these cells: ({}):", entryCellCondition.AND ? "AND" : "OR");
 					for (const auto& string : entryCellCondition.cells) {
 						logger::info("    [{}]", string->GetFormEditorID());
 					}
 				}
 				if (!entryLocationCondition.locations.empty()) {
-					logger::info("  >Music will apply to these locations: ([]):", entryLocationCondition.AND ? "AND" : "OR");
+					logger::info("  >Music will apply to these locations: ({}):", entryLocationCondition.AND ? "AND" : "OR");
 					for (const auto& string : entryLocationCondition.locations) {
 						logger::info("    [{}]", string->GetFormEditorID());
 					}
 				}
 				if (!entryCombatTargetKeywordsCondition.keywords.empty()) {
-					logger::info("  >Music will apply to these locations: ([]):", entryCombatTargetKeywordsCondition.AND ? "AND" : "OR");
+					logger::info("  >Music will apply to these locations: ({}):", entryCombatTargetKeywordsCondition.AND ? "AND" : "OR");
 					for (const auto& string : entryCombatTargetKeywordsCondition.keywords) {
 						logger::info("    [{}]", string->GetFormEditorID());
 					}
 				}
 				if (!entryCombatTargetCondition.targets.empty()) {
-					logger::info("  >Music will apply to these combat targets: ([]):", entryCombatTargetCondition.AND ? "AND" : "OR");
+					logger::info("  >Music will apply to these combat targets: ({}):", entryCombatTargetCondition.AND ? "AND" : "OR");
 					for (const auto& string : entryCombatTargetCondition.targets) {
 						logger::info("    [{}]", string->GetName());
 					}
