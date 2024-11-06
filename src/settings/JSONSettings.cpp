@@ -252,14 +252,21 @@ namespace JSONSettings
 					continue;
 				}
 
-				const auto& entryMusicType = entry["musicType"];
-				if (!entryMusicType || !entryMusicType.isString()) {
-					logger::warn("<{}> is either missing musicType or it is not a string.", path);
+				const auto& entryIsCombatMusic = entry["isCombatMusic"];
+				if (!entryIsCombatMusic || !entryIsCombatMusic.isBool()) {
+					logger::warn("<{}> is either missing musicType or it is not a bool.", path);
 					continue;
 				}
-				const auto entryMusicForm = Utilities::Forms::GetFormFromString<RE::BGSMusicType>(entryMusicType.asString());
+				bool isCombatMusic = entryIsCombatMusic.asBool();
+
+				const auto& entryNewMusic = entry["newMusic"];
+				if (!entryNewMusic || !entryNewMusic.isString()) {
+					logger::warn("<{}> is either missing newMusic or it is not a string.", path);
+					continue;
+				}
+				const auto entryMusicForm = Utilities::Forms::GetFormFromString<RE::BGSMusicType>(entryNewMusic.asString());
 				if (!entryMusicForm) {
-					logger::warn("<{}> -> <{}> could not resolve form.", path, entryMusicType.asString());
+					logger::warn("<{}> -> <{}> could not resolve form.", path, entryNewMusic.asString());
 					continue;
 				}
 				
@@ -283,8 +290,14 @@ namespace JSONSettings
 					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::CombatTargetKeywordCondition>(entryCombatTargetKeywordsCondition));
 				}
 
-				Hooks::CombatMusicCalls::GetSingleton()->PushNewMusic(std::move(newCombatMusic));
-				logger::info("Created new combat music: ");
+				if (isCombatMusic) {
+					Hooks::CombatMusicCalls::GetSingleton()->PushNewCombatMusic(std::move(newCombatMusic));
+				}
+				else {
+					Hooks::CombatMusicCalls::GetSingleton()->PushNewClearedMusic(std::move(newCombatMusic));
+				}
+				
+				logger::info("Created new {} music: ", isCombatMusic ? "combat" : "dungeon cleared");
 				if (!entryWorldspaceCondition.worldspaces.empty()) {
 					logger::info("  >Music will apply to these worldspaces ({}):", entryWorldspaceCondition.AND ? "AND" : "OR");
 					for (const auto& string : entryWorldspaceCondition.worldspaces) {

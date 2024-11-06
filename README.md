@@ -6,6 +6,8 @@ Traditionally, adding combat music required you to edit **all other combat music
 If you had 3+ mods that added conditions, the patching was already unbearable. Another mod, [MusicTypeDistributor](https://www.nexusmods.com/skyrimspecialedition/mods/119571) by ThirdEyeSqueegee attempted to solve this issue, but didn't alleviate the need for patches. This is where this mod comes in.
 
 By introducing a condition system, you can swap out what track is considered the MUSCombat track, and use that intelligently. Combat Music determins what the best combat music is at runtime and saves you the headache.
+
+Additionally, you can also swap "location cleared" music the same way you can replace combat music.
 ## Developer Information
 In order to begin developing with Combat Music, you should familiarize yourself with JSON. JSON is a human readable data exchange language. It is perfect for complex configurations, like the ones present in many of my frameworks.
 
@@ -16,37 +18,40 @@ Here is a basic skeleton configuration you can use:
 {
   "combatMusic": [
     {
-      "musicType": "YourMusicEditorID",
+      "isCombatMusic": true,
+      "newMusic": "YourMusicEditorID",
       "worldspaces": {
         "AND": false,
-        "forms": [ "EditorID", "EditorID2", "..." ] //EditorIDs of the worldspaces
+        "forms": [ "EditorID", "EditorID2", "..." ]
       },
       "cells": {
         "AND": false,
-        "forms": [ "EditorID", "EditorID2", "..." ] //EditorIDs of the cells (might not work with exterior cells)
+        "forms": [ "EditorID", "EditorID2", "..." ]
       },
       "locations": {
         "AND": false,
-        "forms": [ "EditorID", "EditorID2", "..." ] //EditorIDs of the locations
+        "forms": [ "EditorID", "EditorID2", "..." ]
       },
       "locationKeywords": {
         "AND": false,
-        "forms": [ "EditorID", "..." ]              //EditorIDs of the desired keywords
+        "forms": [ "EditorID", "..." ]
       },
       "combatTarget": {
         "AND": false,
-        "forms": [ "Modname.esp|0x123ABC", "..." ]  //Formatted strings of the actorbase
+        "forms": [ "Modname.esp|0x123ABC", "..." ]
       },
       "combatTargetKeywords": {
         "AND": false,
-        "forms": [ "EditorID", "..." ]              //EditorIDs of the desired keywords
+        "forms": [ "EditorID", "..." ]
       }
     }
   ]
 }
 ```
 ### Fields
-- `musicType`
+- `isCombatMusic`
+If true, this is a combat music swap. If false, it is a location cleared music swap.
+- `newMusic`
 The music that will play if this is the best fitting combat music to use.
 - `AND`
 A flag that will make the particular condition (worldspace, cell, location...) necessary to fulfill if set to true.
@@ -80,7 +85,7 @@ Similar to CombatTarget, but returns true if the combat target has any of these 
       },
       "cells": {
         "AND": false,
-        "forms": [ "WinterholdCollegeArcanaeum"" ]
+        "forms": [ "WinterholdCollegeArcanaeum" ]
       }
     }
   ]
@@ -121,7 +126,7 @@ If two high priority, or two or more low priority rules are in conflict, the one
       },
       "locationKeyword": {
         "AND": true,
-        "forms": [ "LocTypeDwarvenAutomatons"" ]
+        "forms": [ "LocTypeDwarvenAutomatons" ]
       }
     }
   ]

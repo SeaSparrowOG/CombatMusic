@@ -228,10 +228,12 @@ namespace Hooks {
 		bool Install();
 		RE::BGSMusicType* GetCurrentCombatMusic();
 		void SetCurrentCombatMusic(RE::BGSMusicType* a_combatMusic);
-		void PushNewMusic(ConditionalBattleMusic&& newMusic);
+		void PushNewCombatMusic(ConditionalBattleMusic&& newMusic);
+		void PushNewClearedMusic(ConditionalBattleMusic&& newMusic);
 
 	private:
-		RE::BGSMusicType* GetAppropriateMusic(RE::BGSMusicType* a_music);
+		RE::BGSMusicType* GetAppropriateCombatMusic(RE::BGSMusicType* a_music);
+		RE::BGSMusicType* GetAppropriateClearedMusic(RE::BGSMusicType* a_music);
 		RE::BGSMusicType* ClearMusic();
 
 		// Reverts the combat music, in cases like exiting back to the main menu.
@@ -249,6 +251,7 @@ namespace Hooks {
 
 		RE::BGSMusicType* storedMusic;
 		std::vector<ConditionalBattleMusic> conditionalMusic;
+		std::vector<ConditionalBattleMusic> conditionalClearedMusic;
 
 		inline static REL::Relocation<decltype(&RevertCombatMusic)> _revertCombatMusic;
 		inline static REL::Relocation<decltype(&StartCombatMusic)>  _startCombatMusic;
