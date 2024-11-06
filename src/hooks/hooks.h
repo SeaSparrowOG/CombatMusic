@@ -200,11 +200,14 @@ namespace Hooks {
 					if (condition->IsTrue()) {
 						if (!matchedOR && !condition->AND) {
 							matchedOR = true;
+							response++;
 						}
 						if (condition->level == PriorityLevel::HIGH && priority == PriorityLevel::LOW) {
 							priority = PriorityLevel::HIGH;
 						}
-						response++;
+						if (condition->AND) {
+							response++;
+						}
 					}
 					else if (condition->AND) {
 						return std::make_pair(PriorityLevel::LOW, 0);
