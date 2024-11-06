@@ -12,6 +12,53 @@ namespace Hooks {
 			virtual bool IsTrue() const = 0;
 		};
 
+		struct CombatTargetCondition : public Condition {
+			bool IsTrue() const override {
+				const auto player = RE::PlayerCharacter::GetSingleton();
+				const auto combatTarget = player->currentCombatTarget.get().get();
+				if (!combatTarget) {
+					return false;
+				}
+				const auto targetBase = combatTarget->GetActorBase();
+				if (!targetBase) {
+					return false;
+				}
+
+				for (const auto target : targets) {
+					if (target == targetBase) {
+						return true;
+					}
+				}
+
+				return false;
+			}
+			std::vector<RE::TESNPC*> targets;
+		};
+
+		struct CombatTargetKeywordCondition : public  Condition {
+			bool IsTrue() const override {
+				const auto player = RE::PlayerCharacter::GetSingleton();
+				const auto combatTarget = player->currentCombatTarget.get().get();
+				if (!combatTarget) {
+					return false;
+				}
+				const auto targetBase = combatTarget->GetActorBase();
+				const auto targetRace = combatTarget->GetRace();
+				if (!targetBase || !targetRace) {
+					return false;
+				}
+
+				for (const auto keyword : keywords) {
+					if (targetBase->HasKeyword(keyword) || targetRace->HasKeyword(keyword)) {
+						return true;
+					}
+				}
+
+				return false;
+			}
+			std::vector<RE::BGSKeyword*> keywords;
+		};
+
 		struct WorldspaceCondition : public Condition {
 			bool IsTrue() const override {
 				const auto player = RE::PlayerCharacter::GetSingleton();

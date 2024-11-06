@@ -91,6 +91,52 @@ namespace JSONSettings
 					continue;
 				}
 
+				auto entryCombatTargetCondition = Hooks::CombatMusicCalls::CombatTargetCondition();
+				const auto& entryCombatTarget = entry["combatTarget"];
+				if (entryCombatTarget && entryCombatTarget.isArray()) {
+					for (const auto& combatTarget : entryCombatTarget) {
+						if (!combatTarget.isString()) {
+							logger::warn("<{}> contains a combatTarget condition that is not a string.", path);
+							errorOccured = true;
+							continue;
+						}
+
+						const auto foundActor = Utilities::Forms::GetFormFromString<RE::TESNPC>(combatTarget.asString());
+						if (!foundActor) {
+							logger::warn("<{}> -> <{}> could not resolve form.", path, combatTarget.asString());
+							errorOccured = true;
+							continue;
+						}
+						entryCombatTargetCondition.targets.push_back(foundActor);
+					}
+				}
+				if (errorOccured) {
+					continue;
+				}
+
+				auto entryCombatTargetKeywordsCondition = Hooks::CombatMusicCalls::CombatTargetKeywordCondition();
+				const auto& entryTargetKeywords = entry["combatTargetKeywords"];
+				if (entryTargetKeywords && entryTargetKeywords.isArray()) {
+					for (const auto& targetKeyword : entryTargetKeywords) {
+						if (!targetKeyword.isString()) {
+							logger::warn("<{}> contains a combatTargetKeywords condition that is not a string.", path);
+							errorOccured = true;
+							continue;
+						}
+
+						const auto foundKeyword = Utilities::Forms::GetFormFromString<RE::BGSKeyword>(targetKeyword.asString());
+						if (!foundKeyword) {
+							logger::warn("<{}> -> <{}> could not resolve form.", path, targetKeyword.asString());
+							errorOccured = true;
+							continue;
+						}
+						entryCombatTargetKeywordsCondition.keywords.push_back(foundKeyword);
+					}
+				}
+				if (errorOccured) {
+					continue;
+				}
+
 				auto entryCellCondition = Hooks::CombatMusicCalls::CellCondition();
 				const auto& entryCells = entry["cells"]; 
 				if (entryCells && entryCells.isArray()) {
@@ -158,6 +204,12 @@ namespace JSONSettings
 				if (!entryLocationCondition.locations.empty()) {
 					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::LocationCondition>(entryLocationCondition));
 				}
+				if (!entryCombatTargetCondition.targets.empty()) {
+					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::CombatTargetCondition>(entryCombatTargetCondition));
+				}
+				if (!entryCombatTargetKeywordsCondition.keywords.empty()) {
+					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::CombatTargetKeywordCondition>(entryCombatTargetKeywordsCondition));
+				}
 
 				Hooks::CombatMusicCalls::GetSingleton()->PushNewMusic(std::move(newCombatMusic));
 				logger::info("Created new combat music: ");
@@ -177,6 +229,18 @@ namespace JSONSettings
 					logger::info("  >Music will apply to these locations:");
 					for (const auto& string : entryLocationCondition.locations) {
 						logger::info("    [{}]", string->GetFormEditorID());
+					}
+				}
+				if (!entryCombatTargetKeywordsCondition.keywords.empty()) {
+					logger::info("  >Music will apply to these locations:");
+					for (const auto& string : entryCombatTargetKeywordsCondition.keywords) {
+						logger::info("    [{}]", string->GetFormEditorID());
+					}
+				}
+				if (!entryCombatTargetCondition.targets.empty()) {
+					logger::info("  >Music will apply to these combat targets:");
+					for (const auto& string : entryCombatTargetCondition.targets) {
+						logger::info("    [{}]", string->GetName());
 					}
 				}
 			}

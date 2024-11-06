@@ -97,11 +97,13 @@ namespace Hooks {
 
 	RE::BGSMusicType* CombatMusicCalls::EndCombatMusic(int a1)
 	{
+		a1;
 		return CombatMusicCalls::GetSingleton()->ClearMusic();
 	}
 
 	RE::BGSMusicType* CombatMusicCalls::ClearLocation(int a1)
 	{
+		a1;
 		const auto response = _clearLocation(a1);
 		return response;
 	}

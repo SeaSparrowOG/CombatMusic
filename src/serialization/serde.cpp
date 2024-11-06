@@ -69,6 +69,7 @@ namespace Serialization {
 
 	void RevertCallback(SKSE::SerializationInterface* a_intfc)
 	{
+		(void)a_intfc;
 		Hooks::CombatMusicCalls::GetSingleton()->SetCurrentCombatMusic(nullptr);
 	}
 
