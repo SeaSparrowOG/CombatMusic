@@ -58,10 +58,19 @@ namespace Hooks {
 
 		RE::BGSMusicType* newMusic = nullptr;
 		int bestMatch = 0;
+		PriorityLevel bestPriorityLevel = PriorityLevel::LOW;
 		for (const auto& candidate : conditionalMusic) {
 			const auto candidateMatch = candidate.MatchDegree();
-			if (candidateMatch > bestMatch) {
-				bestMatch = candidateMatch;
+			if (candidateMatch.first == PriorityLevel::HIGH && bestPriorityLevel == PriorityLevel::LOW) {
+				bestPriorityLevel = PriorityLevel::HIGH;
+				bestMatch = candidateMatch.second;
+				newMusic = candidate.music;
+			}
+			else if (candidateMatch.first == PriorityLevel::LOW && bestPriorityLevel == PriorityLevel::HIGH) {
+				continue;
+			}
+			else if (bestMatch < candidateMatch.second) {
+				bestMatch = candidateMatch.second;
 				newMusic = candidate.music;
 			}
 		}

@@ -8,8 +8,14 @@ namespace Hooks {
 	class CombatMusicCalls : public Utilities::Singleton::ISingleton<CombatMusicCalls>
 	{
 	public:
+		enum PriorityLevel {
+			LOW,
+			HIGH
+		};
+
 		struct Condition {
 			virtual bool IsTrue() const = 0;
+			PriorityLevel level;
 			bool AND;
 		};
 
@@ -32,6 +38,10 @@ namespace Hooks {
 				}
 
 				return false;
+			}
+
+			CombatTargetCondition() {
+				level = PriorityLevel::HIGH;
 			}
 			std::vector<RE::TESNPC*> targets;
 		};
@@ -57,6 +67,10 @@ namespace Hooks {
 
 				return false;
 			}
+
+			CombatTargetKeywordCondition() {
+				level = PriorityLevel::HIGH;
+			}
 			std::vector<RE::BGSKeyword*> keywords;
 		};
 
@@ -76,6 +90,10 @@ namespace Hooks {
 
 				return false;
 			}
+
+			WorldspaceCondition() {
+				level = PriorityLevel::LOW;
+			}
 			std::vector<RE::TESWorldSpace*> worldspaces;
 		};
 
@@ -94,6 +112,10 @@ namespace Hooks {
 				}
 
 				return false;
+			}
+
+			CellCondition() {
+				level = PriorityLevel::LOW;
 			}
 			std::vector<RE::TESObjectCELL*> cells;
 		};
@@ -123,6 +145,10 @@ namespace Hooks {
 
 				return false;
 			}
+
+			LocationCondition() {
+				level = PriorityLevel::LOW;
+			}
 			std::vector<RE::BGSLocation*> locations;
 		};
 
@@ -130,17 +156,25 @@ namespace Hooks {
 			RE::BGSMusicType* music;
 			std::vector<std::unique_ptr<Condition>> conditions;
 
-			int MatchDegree() const {
+			std::pair<PriorityLevel, int> MatchDegree() const {
 				int response = 0;
+				auto priority = PriorityLevel::LOW;
 				for (const auto& condition : conditions) {
+					if (priority == PriorityLevel::HIGH && condition->level == PriorityLevel::LOW) {
+						continue;
+					}
 					if (condition->IsTrue()) {
+						if (condition->level == PriorityLevel::HIGH && priority == PriorityLevel::LOW) {
+							response = 0;
+							priority = PriorityLevel::HIGH;
+						}
 						response++;
 					}
 					else if (condition->AND) {
-						return 0;
+						return std::make_pair(PriorityLevel::LOW, 0);
 					}
 				}
-				return response;
+				return std::make_pair(priority, 0);
 			}
 
 			ConditionalBattleMusic(RE::BGSMusicType* a_music) {
