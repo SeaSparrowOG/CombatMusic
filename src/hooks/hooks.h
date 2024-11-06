@@ -174,7 +174,7 @@ namespace Hooks {
 						return std::make_pair(PriorityLevel::LOW, 0);
 					}
 				}
-				return std::make_pair(priority, 0);
+				return std::make_pair(priority, response);
 			}
 
 			ConditionalBattleMusic(RE::BGSMusicType* a_music) {
@@ -192,15 +192,27 @@ namespace Hooks {
 		RE::BGSMusicType* GetAppropriateMusic(RE::BGSMusicType* a_music);
 		RE::BGSMusicType* ClearMusic();
 
-		static RE::BGSMusicType* StartCombatMusic(int a1);
-		static RE::BGSMusicType* EndCombatMusic(int a1);
-		static RE::BGSMusicType* ClearLocation(int a1);
+		// Reverts the combat music, in cases like exiting back to the main menu.
+		static RE::BGSMusicType* RevertCombatMusic(RE::DEFAULT_OBJECT a1);
+		// Main hook, called when combat starts.
+		static RE::BGSMusicType* StartCombatMusic(RE::DEFAULT_OBJECT a1);
+		// The game gets MUSCombat again whenever a save is loaded that had combat music playing.
+		static RE::BGSMusicType* LoadCombatMusic(RE::DEFAULT_OBJECT a1);
+		// Secondary hook, makes sure to end custom combat music when combat ends.
+		static RE::BGSMusicType* EndCombatMusic(RE::DEFAULT_OBJECT a1);
+		// Discovery music checks for MUSCombat, so we pass custom music here too.
+		static RE::BGSMusicType* DiscoveryMusic(RE::DEFAULT_OBJECT a1);
+		// I am not sure, frankly, but it is used in the vanilla system.
+		static RE::BGSMusicType* ClearLocation(RE::DEFAULT_OBJECT a1);
 
 		RE::BGSMusicType* storedMusic;
 		std::vector<ConditionalBattleMusic> conditionalMusic;
 
-		inline static REL::Relocation<decltype(&StartCombatMusic)> _startCombatMusic;
-		inline static REL::Relocation<decltype(&EndCombatMusic)>   _endCombatMusic;
-		inline static REL::Relocation<decltype(&ClearLocation)>    _clearLocation;
+		inline static REL::Relocation<decltype(&RevertCombatMusic)> _revertCombatMusic;
+		inline static REL::Relocation<decltype(&StartCombatMusic)>  _startCombatMusic;
+		inline static REL::Relocation<decltype(&LoadCombatMusic)>   _loadCombatMusic;
+		inline static REL::Relocation<decltype(&EndCombatMusic)>    _endCombatMusic;
+		inline static REL::Relocation<decltype(&DiscoveryMusic)>    _discoveryMusic;
+		inline static REL::Relocation<decltype(&ClearLocation)>     _clearLocation;
 	};
 }
