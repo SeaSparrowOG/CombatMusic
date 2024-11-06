@@ -152,20 +152,56 @@ namespace Hooks {
 			std::vector<RE::BGSLocation*> locations;
 		};
 
+		struct LocationKeywordCondition : public Condition {
+			bool IsTrue() const override {
+				const auto player = RE::PlayerCharacter::GetSingleton();
+				auto playerLocation = player->GetCurrentLocation();
+				if (!playerLocation) {
+					return false;
+				}
+
+				for (const auto* keyword : keywords) {
+					if (playerLocation->HasKeyword(keyword)) {
+						return true;
+					}
+				}
+
+				while (playerLocation->parentLoc) {
+					playerLocation = playerLocation->parentLoc;
+					for (const auto* keyword : keywords) {
+						if (playerLocation->HasKeyword(keyword)) {
+							return true;
+						}
+					}
+				}
+
+				return false;
+			}
+
+			LocationKeywordCondition() {
+				level = PriorityLevel::LOW;
+			}
+			std::vector<RE::BGSKeyword*> keywords;
+		};
+
 		struct ConditionalBattleMusic {
 			RE::BGSMusicType* music;
 			std::vector<std::unique_ptr<Condition>> conditions;
 
 			std::pair<PriorityLevel, int> MatchDegree() const {
 				int response = 0;
+				bool matchedOR = false;
+				bool hasOR = false;
 				auto priority = PriorityLevel::LOW;
 				for (const auto& condition : conditions) {
-					if (priority == PriorityLevel::HIGH && condition->level == PriorityLevel::LOW) {
-						continue;
+					if (!hasOR && !condition->AND) {
+						hasOR = true;
 					}
 					if (condition->IsTrue()) {
+						if (!matchedOR && !condition->AND) {
+							matchedOR = true;
+						}
 						if (condition->level == PriorityLevel::HIGH && priority == PriorityLevel::LOW) {
-							response = 0;
 							priority = PriorityLevel::HIGH;
 						}
 						response++;
@@ -173,6 +209,9 @@ namespace Hooks {
 					else if (condition->AND) {
 						return std::make_pair(PriorityLevel::LOW, 0);
 					}
+				}
+				if (hasOR && !matchedOR) {
+					return std::make_pair(PriorityLevel::LOW, 0);
 				}
 				return std::make_pair(priority, response);
 			}

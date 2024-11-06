@@ -152,7 +152,7 @@ namespace JSONSettings
 							continue;
 						}
 						entryCombatTargetKeywordsCondition.keywords.push_back(foundKeyword);
-						entryCombatTargetCondition.AND = conditionAND.asBool();
+						entryCombatTargetKeywordsCondition.AND = conditionAND.asBool();
 					}
 				}
 				if (errorOccured) {
@@ -183,7 +183,7 @@ namespace JSONSettings
 							continue;
 						}
 						entryCellCondition.cells.push_back(foundCell);
-						entryCombatTargetCondition.AND = conditionAND.asBool();
+						entryCellCondition.AND = conditionAND.asBool();
 					}
 				}
 				if (errorOccured) {
@@ -214,7 +214,38 @@ namespace JSONSettings
 							continue;
 						}
 						entryLocationCondition.locations.push_back(foundLocation);
-						entryCombatTargetCondition.AND = conditionAND.asBool();
+						entryLocationCondition.AND = conditionAND.asBool();
+					}
+				}
+				if (errorOccured) {
+					continue;
+				}
+
+				auto entryLocationKeywordCondition = Hooks::CombatMusicCalls::LocationKeywordCondition();
+				const auto& entryLocationKeywords = entry["locationKeywords"];
+				if (entryLocationKeywords && entryLocationKeywords.isObject()) {
+					const auto& conditionArray = entryLocationKeywords["forms"];
+					const auto& conditionAND = entryLocationKeywords["AND"];
+					if (!conditionArray || !conditionArray.isArray() || !conditionAND || !conditionAND.isBool()) {
+						logger::warn("<{}> contains a entryLocationKeywords condition that is missing or has incorrect setup.", path);
+						continue;
+					}
+
+					for (const auto& entryKeyword : conditionArray) {
+						if (!entryKeyword.isString()) {
+							logger::warn("<{}> contains a cell condition that is not a string.", path);
+							errorOccured = true;
+							continue;
+						}
+
+						const auto foundKeyword = Utilities::Forms::GetFormFromString<RE::BGSKeyword>(entryKeyword.asString());
+						if (!foundKeyword) {
+							logger::warn("<{}> -> <{}> could not resolve form.", path, entryKeyword.asString());
+							errorOccured = true;
+							continue;
+						}
+						entryLocationKeywordCondition.keywords.push_back(foundKeyword);
+						entryLocationKeywordCondition.AND = conditionAND.asBool();
 					}
 				}
 				if (errorOccured) {
@@ -242,6 +273,9 @@ namespace JSONSettings
 				if (!entryLocationCondition.locations.empty()) {
 					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::LocationCondition>(entryLocationCondition));
 				}
+				if (!entryLocationKeywordCondition.keywords.empty()) {
+					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::LocationKeywordCondition>(entryLocationKeywordCondition));
+				}
 				if (!entryCombatTargetCondition.targets.empty()) {
 					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::CombatTargetCondition>(entryCombatTargetCondition));
 				}
@@ -266,6 +300,12 @@ namespace JSONSettings
 				if (!entryLocationCondition.locations.empty()) {
 					logger::info("  >Music will apply to these locations: ({}):", entryLocationCondition.AND ? "AND" : "OR");
 					for (const auto& string : entryLocationCondition.locations) {
+						logger::info("    [{}]", string->GetFormEditorID());
+					}
+				}
+				if (!entryLocationKeywordCondition.keywords.empty()) {
+					logger::info("  >Music will apply to locations with this keywords: ({}):", entryLocationCondition.AND ? "AND" : "OR");
+					for (const auto& string : entryLocationKeywordCondition.keywords) {
 						logger::info("    [{}]", string->GetFormEditorID());
 					}
 				}
