@@ -1,6 +1,4 @@
 #include "hooks/hooks.h"
-#include "Papyrus/papyrus.h"
-#include "serialization/serde.h"
 #include "settings/JSONSettings.h"
 
 namespace
@@ -26,7 +24,7 @@ namespace
 		log->flush_on(level);
 
 		spdlog::set_default_logger(std::move(log));
-		spdlog::set_pattern("%s(%#): [%^%l%$] %v"s);
+		spdlog::set_pattern("[%^%l%$] %v"s);
 	}
 }
 
@@ -76,13 +74,16 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
 	InitializeLog();
-	logger::info("{} v{}"sv, Plugin::NAME, Plugin::VERSION.string());
+	logger::info("Starting up {} v{}"sv, Plugin::NAME, Plugin::VERSION.string());
+	logger::info("Author: SeaSparrow");
+	logger::info("___________________________________________________");
 
 	SKSE::Init(a_skse);
-	SKSE::AllocTrampoline(0);
 
 	const auto ver = a_skse->RuntimeVersion();
 	if (ver < SKSE::RUNTIME_1_6_1130) {
+		logger::error("Unsupported Skyrim version. Only compatible with versions later than 1.6.1130.");
+		logger::info("___________________________________________________");
 		return false;
 	}
 
@@ -90,15 +91,5 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	messaging->RegisterListener(&MessageEventCallback);
 
 	Hooks::Install();
-	SKSE::GetPapyrusInterface()->Register(Papyrus::RegisterFunctions);
-
-	// Not needed
-	/*
-	const auto serialization = SKSE::GetSerializationInterface();
-	serialization->SetUniqueID(Serialization::ID);
-	serialization->SetSaveCallback(&Serialization::SaveCallback);
-	serialization->SetLoadCallback(&Serialization::LoadCallback);
-	serialization->SetRevertCallback(&Serialization::RevertCallback);
-	*/
 	return true;
 }

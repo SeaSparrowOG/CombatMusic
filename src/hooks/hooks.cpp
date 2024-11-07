@@ -8,26 +8,36 @@ namespace Hooks {
 
 	bool CombatMusicCalls::Install()
 	{
+		logger::info("Preparing to install hooks...");
 		SKSE::AllocTrampoline(84);
 		auto& trampoline = SKSE::GetTrampoline();
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget0{ REL::ID(46897), 0x20 };
 		_revertCombatMusic = trampoline.write_call<5>(combatMusicTarget0.address(), &RevertCombatMusic);
+		logger::info("  >Installed revert combat music hook...");
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget1{ REL::ID(46870), 0x1C1 };
 		_startCombatMusic = trampoline.write_call<5>(combatMusicTarget1.address(), &StartCombatMusic);
+		logger::info("  >Installed start combat music hook...");
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget2{ REL::ID(46870), 0x22D };
 		_endCombatMusic = trampoline.write_call<5>(combatMusicTarget2.address(), &EndCombatMusic);
+		logger::info("  >Installed end combat music hook...");
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget3{ REL::ID(18369), 0x173 };
 		_clearLocation = trampoline.write_call<5>(combatMusicTarget3.address(), &ClearLocation);
+		logger::info("  >Installed clear location combat music hook...");
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget4{ REL::ID(51653), 0x29C };
 		_discoveryMusic = trampoline.write_call<5>(combatMusicTarget4.address(), &DiscoveryMusic);
+		logger::info("  >Installed discover location combat music hook...");
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget5{ REL::ID(46895), 0x3B4 };
 		_loadCombatMusic = trampoline.write_call<5>(combatMusicTarget5.address(), &LoadCombatMusic);
+		logger::info("  >Installed load combat music hook...");
+
+		logger::info("Finished installing hooks.");
+		logger::info("___________________________________________________");
 		return true;
 	}
 

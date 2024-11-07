@@ -20,6 +20,7 @@ namespace JSONSettings
 	}
 
 	void Read() {
+		logger::info("Reading configuration files...");
 		std::vector<std::string> paths{};
 		try {
 			paths = findJsonFiles();
@@ -33,7 +34,9 @@ namespace JSONSettings
 			return;
 		}
 
+		logger::info("Found {} files.", paths.size());
 		for (const auto& path : paths) {
+			logger::info("Reading <{}>:", path);
 			Json::Reader JSONReader;
 			Json::Value JSONFile;
 			try {
@@ -94,6 +97,10 @@ namespace JSONSettings
 						entryWorldspaceCondition.AND = conditionAND.asBool();
 					}
 				}
+				else if (entryWorldspaces) {
+					logger::warn("<{}> contains worldspaces, but it is not an object.", path);
+					continue;
+				}
 				if (errorOccured) {
 					continue;
 				}
@@ -123,6 +130,10 @@ namespace JSONSettings
 						entryCombatTargetCondition.AND = conditionAND.asBool();
 						entryCombatTargetCondition.targets.push_back(foundActor);
 					}
+				}
+				else if (entryCombatTarget) {
+					logger::warn("<{}> contains combatTarget, but it is not an object.", path);
+					continue;
 				}
 				if (errorOccured) {
 					continue;
@@ -155,6 +166,10 @@ namespace JSONSettings
 						entryCombatTargetKeywordsCondition.AND = conditionAND.asBool();
 					}
 				}
+				else if (entryTargetKeywords) {
+					logger::warn("<{}> contains combatTargetKeywords, but it is not an object.", path);
+					continue;
+				}
 				if (errorOccured) {
 					continue;
 				}
@@ -185,6 +200,10 @@ namespace JSONSettings
 						entryCellCondition.cells.push_back(foundCell);
 						entryCellCondition.AND = conditionAND.asBool();
 					}
+				}
+				else if (entryCells) {
+					logger::warn("<{}> contains cells, but it is not an object.", path);
+					continue;
 				}
 				if (errorOccured) {
 					continue;
@@ -217,6 +236,10 @@ namespace JSONSettings
 						entryLocationCondition.AND = conditionAND.asBool();
 					}
 				}
+				else if (entryLocations) {
+					logger::warn("<{}> contains locations, but it is not an object.", path);
+					continue;
+				}
 				if (errorOccured) {
 					continue;
 				}
@@ -247,6 +270,10 @@ namespace JSONSettings
 						entryLocationKeywordCondition.keywords.push_back(foundKeyword);
 						entryLocationKeywordCondition.AND = conditionAND.asBool();
 					}
+				}
+				else if (entryLocationKeywords) {
+					logger::warn("<{}> contains locationKeywords, but it is not an object", path);
+					continue;
 				}
 				if (errorOccured) {
 					continue;
@@ -311,9 +338,12 @@ namespace JSONSettings
 					}
 				}
 				if (!entryLocationCondition.locations.empty()) {
-					logger::info("  >Music will apply to these locations: ({}):", entryLocationCondition.AND ? "AND" : "OR");
+					logger::info("  >Music will apply to these locations: (PO3's Tweaks must be enabled to view) ({}):", entryLocationCondition.AND ? "AND" : "OR");
 					for (const auto& string : entryLocationCondition.locations) {
-						logger::info("    [{}]", string->GetFormEditorID());
+						auto message = Utilities::EDID::GetEditorID(string);
+						if (!message.empty()) {
+							logger::info("    [{}]", message);
+						}
 					}
 				}
 				if (!entryLocationKeywordCondition.keywords.empty()) {
@@ -334,7 +364,10 @@ namespace JSONSettings
 						logger::info("    [{}]", string->GetName());
 					}
 				}
+				logger::info("---------------------------------------------------");
 			}
+			logger::info("Finished!");
+			logger::info("___________________________________________________");;
 		}
 	}
 }

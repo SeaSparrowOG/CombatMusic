@@ -30,7 +30,7 @@ Here is a basic skeleton configuration you can use:
       },
       "locations": {
         "AND": false,
-        "forms": [ "EditorID", "EditorID2", "..." ]
+        "forms": [ "Modname.esp|0x123ABC", "..." ]
       },
       "locationKeywords": {
         "AND": false,
