@@ -260,4 +260,54 @@ namespace Hooks {
 		inline static REL::Relocation<decltype(&DiscoveryMusic)>    _discoveryMusic;
 		inline static REL::Relocation<decltype(&ClearLocation)>     _clearLocation;
 	};
+
+	struct ActorUpdate {
+		static void Install() {
+			stl::write_vfunc<RE::PlayerCharacter, ActorUpdate>();
+		}
+
+		static void StartCountdown(float a_timeSeconds) {
+			if (isCounting || a_timeSeconds < 0.1f) {
+				return;
+			}
+
+			remainingTime = a_timeSeconds;
+			isCounting = true;
+		}
+
+		static void thunk(RE::PlayerCharacter* a_this, float a_delta) {
+			func(a_this, a_delta);
+			if (!isCounting) {
+				return;
+			}
+
+#ifdef DEBUG
+			logger::debug("Player Update: {}", a_delta);
+#endif
+
+			remainingTime -= a_delta;
+			if (!a_this->IsInCombat()) {
+				isCounting = false;
+			}
+
+			if (remainingTime <= 0.0f) {
+				isCounting = false;
+				const auto currentMusic = CombatMusicCalls::GetSingleton()->GetCurrentCombatMusic();
+				if (!currentMusic || a_this->IsInCombat()) {
+					return;
+				}
+
+				currentMusic->DoFinish(true);
+				logger::debug("Finished {}", currentMusic && currentMusic->As<RE::TESForm>()
+					? Utilities::EDID::GetEditorID(currentMusic->As<RE::TESForm>())
+					: "NULL");
+			}
+		}
+
+		inline static REL::Relocation<decltype(ActorUpdate::thunk)> func;
+		static constexpr std::size_t idx{ 173 }; //0xAD
+
+		inline static bool isCounting{ false };
+		inline static float remainingTime{ 0.0f };
+	};
 }

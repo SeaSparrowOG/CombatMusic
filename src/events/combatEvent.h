@@ -9,8 +9,12 @@ namespace Events
 	public:
 		void RegisterListener();
 		void SetWaitTime(long a_timeSpanSeconds);
+		void SetShouldWait(bool a_ShouldWait);
+
 	private:
 		RE::BSEventNotifyControl ProcessEvent(const RE::TESCombatEvent* event, RE::BSTEventSource<RE::TESCombatEvent>*) override;
+
+		bool shouldWait;
 		long combatMusicFixWait;
 	};
 }

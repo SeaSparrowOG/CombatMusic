@@ -11,7 +11,9 @@ namespace INISettings
 		ini.SetUnicode();
 		ini.LoadFile(fmt::format(R"(.\Data\SKSE\Plugins\{}.ini)", Plugin::NAME).c_str());
 
+		const auto combatMusicFixShouldWait = ini.GetBoolValue("General", "bShouldSilence", false);
 		const auto combatMusicFixTimeSpanSeconds = ini.GetLongValue("General", "iCombatMusicFixWait", 10);
 		Events::CombatEvent::GetSingleton()->SetWaitTime(combatMusicFixTimeSpanSeconds);
+		Events::CombatEvent::GetSingleton()->SetShouldWait(combatMusicFixShouldWait);
 	}
 }

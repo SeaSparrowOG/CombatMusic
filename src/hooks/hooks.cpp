@@ -4,6 +4,7 @@ namespace Hooks {
 	void Install()
 	{
 		CombatMusicCalls::GetSingleton()->Install();
+		ActorUpdate::Install();
 	}
 
 	bool CombatMusicCalls::Install()

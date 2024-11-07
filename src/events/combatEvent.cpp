@@ -25,10 +25,15 @@ namespace Events
 		combatMusicFixWait = a_timeSpanSeconds;
 	}
 
+	void CombatEvent::SetShouldWait(bool a_ShouldWait)
+	{
+		shouldWait = a_ShouldWait;
+	}
+
 	RE::BSEventNotifyControl CombatEvent::ProcessEvent(const RE::TESCombatEvent* event, RE::BSTEventSource<RE::TESCombatEvent>*)
 	{
 		using control = RE::BSEventNotifyControl;
-		if (!event || !event->actor.get()) {
+		if (!event || !shouldWait) {
 			return control::kContinue;
 		}
 		if (event->newState != RE::ACTOR_COMBAT_STATE::kNone) {
@@ -36,23 +41,11 @@ namespace Events
 		}
 
 		const auto player = RE::PlayerCharacter::GetSingleton();
-		if (!player || player != event->actor.get()) {
+		if (!player) {
 			return control::kContinue;
 		}
 
-		// Adapted from ThirdEyeSqueegee
-		auto func = [&]() {
-			std::this_thread::sleep_for(std::chrono::seconds(combatMusicFixWait));
-			if (!player->IsInCombat()) {
-				const auto combatMusic = Hooks::CombatMusicCalls::GetSingleton()->GetCurrentCombatMusic();
-				if (combatMusic) {
-					combatMusic->DoFinish(true);
-				}
-			}
-			};
-		std::jthread t(func);
-		t.detach();
-
+		Hooks::ActorUpdate::StartCountdown(static_cast<float>(combatMusicFixWait));
 		return control::kContinue;
 	}
 }
