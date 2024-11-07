@@ -20,6 +20,7 @@ namespace JSONSettings
 	}
 
 	void Read() {
+		logger::info("Reading configuration files...");
 		std::vector<std::string> paths{};
 		try {
 			paths = findJsonFiles();
@@ -33,7 +34,9 @@ namespace JSONSettings
 			return;
 		}
 
+		logger::info("Found {} files.", paths.size());
 		for (const auto& path : paths) {
+			logger::info("Reading <{}>:", path);
 			Json::Reader JSONReader;
 			Json::Value JSONFile;
 			try {
@@ -94,6 +97,10 @@ namespace JSONSettings
 						entryWorldspaceCondition.AND = conditionAND.asBool();
 					}
 				}
+				else if (entryWorldspaces) {
+					logger::warn("<{}> contains worldspaces, but it is not an object.", path);
+					continue;
+				}
 				if (errorOccured) {
 					continue;
 				}
@@ -124,6 +131,10 @@ namespace JSONSettings
 						entryCombatTargetCondition.targets.push_back(foundActor);
 					}
 				}
+				else if (entryCombatTarget) {
+					logger::warn("<{}> contains combatTarget, but it is not an object.", path);
+					continue;
+				}
 				if (errorOccured) {
 					continue;
 				}
@@ -152,8 +163,12 @@ namespace JSONSettings
 							continue;
 						}
 						entryCombatTargetKeywordsCondition.keywords.push_back(foundKeyword);
-						entryCombatTargetCondition.AND = conditionAND.asBool();
+						entryCombatTargetKeywordsCondition.AND = conditionAND.asBool();
 					}
+				}
+				else if (entryTargetKeywords) {
+					logger::warn("<{}> contains combatTargetKeywords, but it is not an object.", path);
+					continue;
 				}
 				if (errorOccured) {
 					continue;
@@ -183,8 +198,12 @@ namespace JSONSettings
 							continue;
 						}
 						entryCellCondition.cells.push_back(foundCell);
-						entryCombatTargetCondition.AND = conditionAND.asBool();
+						entryCellCondition.AND = conditionAND.asBool();
 					}
+				}
+				else if (entryCells) {
+					logger::warn("<{}> contains cells, but it is not an object.", path);
+					continue;
 				}
 				if (errorOccured) {
 					continue;
@@ -214,21 +233,67 @@ namespace JSONSettings
 							continue;
 						}
 						entryLocationCondition.locations.push_back(foundLocation);
-						entryCombatTargetCondition.AND = conditionAND.asBool();
+						entryLocationCondition.AND = conditionAND.asBool();
 					}
+				}
+				else if (entryLocations) {
+					logger::warn("<{}> contains locations, but it is not an object.", path);
+					continue;
 				}
 				if (errorOccured) {
 					continue;
 				}
 
-				const auto& entryMusicType = entry["musicType"];
-				if (!entryMusicType || !entryMusicType.isString()) {
-					logger::warn("<{}> is either missing musicType or it is not a string.", path);
+				auto entryLocationKeywordCondition = Hooks::CombatMusicCalls::LocationKeywordCondition();
+				const auto& entryLocationKeywords = entry["locationKeywords"];
+				if (entryLocationKeywords && entryLocationKeywords.isObject()) {
+					const auto& conditionArray = entryLocationKeywords["forms"];
+					const auto& conditionAND = entryLocationKeywords["AND"];
+					if (!conditionArray || !conditionArray.isArray() || !conditionAND || !conditionAND.isBool()) {
+						logger::warn("<{}> contains a entryLocationKeywords condition that is missing or has incorrect setup.", path);
+						continue;
+					}
+
+					for (const auto& entryKeyword : conditionArray) {
+						if (!entryKeyword.isString()) {
+							logger::warn("<{}> contains a cell condition that is not a string.", path);
+							errorOccured = true;
+							continue;
+						}
+
+						const auto foundKeyword = Utilities::Forms::GetFormFromString<RE::BGSKeyword>(entryKeyword.asString());
+						if (!foundKeyword) {
+							logger::warn("<{}> -> <{}> could not resolve form.", path, entryKeyword.asString());
+							errorOccured = true;
+							continue;
+						}
+						entryLocationKeywordCondition.keywords.push_back(foundKeyword);
+						entryLocationKeywordCondition.AND = conditionAND.asBool();
+					}
+				}
+				else if (entryLocationKeywords) {
+					logger::warn("<{}> contains locationKeywords, but it is not an object", path);
 					continue;
 				}
-				const auto entryMusicForm = Utilities::Forms::GetFormFromString<RE::BGSMusicType>(entryMusicType.asString());
+				if (errorOccured) {
+					continue;
+				}
+
+				const auto& entryIsCombatMusic = entry["isCombatMusic"];
+				if (!entryIsCombatMusic || !entryIsCombatMusic.isBool()) {
+					logger::warn("<{}> is either missing musicType or it is not a bool.", path);
+					continue;
+				}
+				bool isCombatMusic = entryIsCombatMusic.asBool();
+
+				const auto& entryNewMusic = entry["newMusic"];
+				if (!entryNewMusic || !entryNewMusic.isString()) {
+					logger::warn("<{}> is either missing newMusic or it is not a string.", path);
+					continue;
+				}
+				const auto entryMusicForm = Utilities::Forms::GetFormFromString<RE::BGSMusicType>(entryNewMusic.asString());
 				if (!entryMusicForm) {
-					logger::warn("<{}> -> <{}> could not resolve form.", path, entryMusicType.asString());
+					logger::warn("<{}> -> <{}> could not resolve form.", path, entryNewMusic.asString());
 					continue;
 				}
 				
@@ -242,6 +307,9 @@ namespace JSONSettings
 				if (!entryLocationCondition.locations.empty()) {
 					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::LocationCondition>(entryLocationCondition));
 				}
+				if (!entryLocationKeywordCondition.keywords.empty()) {
+					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::LocationKeywordCondition>(entryLocationKeywordCondition));
+				}
 				if (!entryCombatTargetCondition.targets.empty()) {
 					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::CombatTargetCondition>(entryCombatTargetCondition));
 				}
@@ -249,8 +317,14 @@ namespace JSONSettings
 					newCombatMusic.conditions.push_back(std::make_unique<Hooks::CombatMusicCalls::CombatTargetKeywordCondition>(entryCombatTargetKeywordsCondition));
 				}
 
-				Hooks::CombatMusicCalls::GetSingleton()->PushNewMusic(std::move(newCombatMusic));
-				logger::info("Created new combat music: ");
+				if (isCombatMusic) {
+					Hooks::CombatMusicCalls::GetSingleton()->PushNewCombatMusic(std::move(newCombatMusic));
+				}
+				else {
+					Hooks::CombatMusicCalls::GetSingleton()->PushNewClearedMusic(std::move(newCombatMusic));
+				}
+				
+				logger::info("Created new {} music: ", isCombatMusic ? "combat" : "dungeon cleared");
 				if (!entryWorldspaceCondition.worldspaces.empty()) {
 					logger::info("  >Music will apply to these worldspaces ({}):", entryWorldspaceCondition.AND ? "AND" : "OR");
 					for (const auto& string : entryWorldspaceCondition.worldspaces) {
@@ -264,8 +338,17 @@ namespace JSONSettings
 					}
 				}
 				if (!entryLocationCondition.locations.empty()) {
-					logger::info("  >Music will apply to these locations: ({}):", entryLocationCondition.AND ? "AND" : "OR");
+					logger::info("  >Music will apply to these locations: (PO3's Tweaks must be enabled to view) ({}):", entryLocationCondition.AND ? "AND" : "OR");
 					for (const auto& string : entryLocationCondition.locations) {
+						auto message = Utilities::EDID::GetEditorID(string);
+						if (!message.empty()) {
+							logger::info("    [{}]", message);
+						}
+					}
+				}
+				if (!entryLocationKeywordCondition.keywords.empty()) {
+					logger::info("  >Music will apply to locations with this keywords: ({}):", entryLocationCondition.AND ? "AND" : "OR");
+					for (const auto& string : entryLocationKeywordCondition.keywords) {
 						logger::info("    [{}]", string->GetFormEditorID());
 					}
 				}
@@ -281,7 +364,10 @@ namespace JSONSettings
 						logger::info("    [{}]", string->GetName());
 					}
 				}
+				logger::info("---------------------------------------------------");
 			}
+			logger::info("Finished!");
+			logger::info("___________________________________________________");;
 		}
 	}
 }
