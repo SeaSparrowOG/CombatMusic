@@ -1,16 +1,25 @@
 {
   "name": "combatmusic",
-  "version-string": "1.0.0",
+  "version-string": "1.0.1",
   "description": "An SKSE plugin for dynamically changing the game's combat music.",
-  "homepage": "",
-  "license": "MIT",
+  "homepage": "https://github.com/SeaSparrowOG/CombatMusic",
+  "license": "GPL-3.0",
   "dependencies": [
+    "boost-stl-interfaces",
+    "clib-util",
+    "commonlib-shared",
     "fmt",
-    "rsm-binary-io",
-    "spdlog",
     "jsoncpp",
-    "xbyak",
-    "simpleini"
+    "rsm-binary-io",
+    "simpleini",
+    "spdlog",
+    "xbyak"
   ],
-  "builtin-baseline": "ea295dff0b3e9e9caeb49d1225dc7272d3231cf1"
+  "builtin-baseline": "89dd0f4d241136b843fb55813b2f0fa6448c204d",
+  "overrides": [
+    {
+      "name": "xbyak",
+      "version": "7.23.1"
+    }
+  ]
 }
