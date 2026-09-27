@@ -263,7 +263,8 @@ namespace Hooks {
 
 	struct ActorUpdate {
 		static void Install() {
-			stl::write_vfunc<RE::PlayerCharacter, ActorUpdate>();
+			REL::Relocation<std::uintptr_t> vtbl{ RE::PlayerCharacter::VTABLE[0] };
+        	func = vtbl.write_vfunc(0xAD, ActorUpdate::thunk);
 		}
 
 		static void StartCountdown(float a_timeSeconds) {
@@ -282,7 +283,7 @@ namespace Hooks {
 			}
 
 #ifdef DEBUG
-			logger::debug("Player Update: {}", a_delta);
+			REX::DEBUG("Player Update: {}", a_delta);
 #endif
 
 			remainingTime -= a_delta;
@@ -298,7 +299,7 @@ namespace Hooks {
 				}
 
 				currentMusic->DoFinish(true);
-				logger::debug("Finished {}", currentMusic && currentMusic->As<RE::TESForm>()
+				REX::DEBUG("Finished {}", currentMusic && currentMusic->As<RE::TESForm>()
 					? Utilities::EDID::GetEditorID(currentMusic->As<RE::TESForm>())
 					: "NULL");
 			}

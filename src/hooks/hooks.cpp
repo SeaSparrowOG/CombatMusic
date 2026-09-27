@@ -9,36 +9,35 @@ namespace Hooks {
 
 	bool CombatMusicCalls::Install()
 	{
-		logger::info("Preparing to install hooks...");
-		SKSE::AllocTrampoline(84);
-		auto& trampoline = SKSE::GetTrampoline();
+		REX::INFO("Preparing to install hooks...");
+		auto& trampoline = REL::GetTrampoline();
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget0{ REL::ID(46897), 0x20 };
 		_revertCombatMusic = trampoline.write_call<5>(combatMusicTarget0.address(), &RevertCombatMusic);
-		logger::info("  >Installed revert combat music hook...");
+		REX::INFO("  >Installed revert combat music hook...");
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget1{ REL::ID(46870), 0x1C1 };
 		_startCombatMusic = trampoline.write_call<5>(combatMusicTarget1.address(), &StartCombatMusic);
-		logger::info("  >Installed start combat music hook...");
+		REX::INFO("  >Installed start combat music hook...");
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget2{ REL::ID(46870), 0x22D };
 		_endCombatMusic = trampoline.write_call<5>(combatMusicTarget2.address(), &EndCombatMusic);
-		logger::info("  >Installed end combat music hook...");
+		REX::INFO("  >Installed end combat music hook...");
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget3{ REL::ID(18369), 0x173 };
 		_clearLocation = trampoline.write_call<5>(combatMusicTarget3.address(), &ClearLocation);
-		logger::info("  >Installed clear location combat music hook...");
+		REX::INFO("  >Installed clear location combat music hook...");
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget4{ REL::ID(51653), 0x29C };
 		_discoveryMusic = trampoline.write_call<5>(combatMusicTarget4.address(), &DiscoveryMusic);
-		logger::info("  >Installed discover location combat music hook...");
+		REX::INFO("  >Installed discover location combat music hook...");
 
 		REL::Relocation<std::uintptr_t> combatMusicTarget5{ REL::ID(46895), 0x3B4 };
 		_loadCombatMusic = trampoline.write_call<5>(combatMusicTarget5.address(), &LoadCombatMusic);
-		logger::info("  >Installed load combat music hook...");
+		REX::INFO("  >Installed load combat music hook...");
 
-		logger::info("Finished installing hooks.");
-		logger::info("___________________________________________________");
+		REX::INFO("Finished installing hooks.");
+		REX::INFO("___________________________________________________");
 		return true;
 	}
 
@@ -102,7 +101,7 @@ namespace Hooks {
 		}
 
 		if (newMusic) {
-			logger::debug("  Starting {}", Utilities::EDID::GetEditorID(newMusic));
+			REX::DEBUG("  Starting {}", Utilities::EDID::GetEditorID(newMusic));
 			storedMusic = newMusic;
 			return newMusic;
 		}
@@ -131,7 +130,7 @@ namespace Hooks {
 		}
 
 		if (newMusic) {
-			logger::debug("  Starting {}", Utilities::EDID::GetEditorID(newMusic));
+			REX::DEBUG("  Starting {}", Utilities::EDID::GetEditorID(newMusic));
 			storedMusic = newMusic;
 			return newMusic;
 		}
@@ -153,7 +152,7 @@ namespace Hooks {
 
 			return MUSCombat;
 		}
-		logger::debug("  Stopping {}", Utilities::EDID::GetEditorID(musicToStop));
+		REX::DEBUG("  Stopping {}", Utilities::EDID::GetEditorID(musicToStop));
 		return musicToStop;
 	}
 
@@ -161,7 +160,7 @@ namespace Hooks {
 	{
 #ifdef DEBUG
 		const auto obj = RE::BGSDefaultObjectManager::GetSingleton()->GetObject(a1);
-		logger::debug("Revert combat music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
+		REX::DEBUG("Revert combat music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
 #endif
 		const auto response = _revertCombatMusic(a1);
 		if (a1 != RE::BGSDefaultObjectManager::DefaultObject::kBattleMusic) {
@@ -175,7 +174,7 @@ namespace Hooks {
 	{
 #ifdef DEBUG
 		const auto obj = RE::BGSDefaultObjectManager::GetSingleton()->GetObject(a1);
-		logger::debug("Start combat music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
+		REX::DEBUG("Start combat music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
 #endif
 		const auto response = _startCombatMusic(a1);
 		if (a1 != RE::BGSDefaultObjectManager::DefaultObject::kBattleMusic) {
@@ -189,7 +188,7 @@ namespace Hooks {
 	{
 #ifdef DEBUG
 		const auto obj = RE::BGSDefaultObjectManager::GetSingleton()->GetObject(a1);
-		logger::debug("Load combat music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
+		REX::DEBUG("Load combat music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
 #endif
 		const auto response = _loadCombatMusic(a1);
 		if (a1 != RE::BGSDefaultObjectManager::DefaultObject::kBattleMusic) {
@@ -203,7 +202,7 @@ namespace Hooks {
 	{
 #ifdef DEBUG
 		const auto obj = RE::BGSDefaultObjectManager::GetSingleton()->GetObject(a1);
-		logger::debug("End combat music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
+		REX::DEBUG("End combat music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
 #endif
 		const auto response = _endCombatMusic(a1);
 		if (a1 != RE::BGSDefaultObjectManager::DefaultObject::kBattleMusic) {
@@ -217,7 +216,7 @@ namespace Hooks {
 	{
 #ifdef DEBUG
 		const auto obj = RE::BGSDefaultObjectManager::GetSingleton()->GetObject(a1);
-		logger::debug("Discovery music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
+		REX::DEBUG("Discovery music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
 #endif
 		if (a1 == RE::BGSDefaultObjectManager::DefaultObject::kBattleMusic) {
 			const auto storedMusic = GetSingleton()->storedMusic;
@@ -232,7 +231,7 @@ namespace Hooks {
 	{
 #ifdef DEBUG
 		const auto obj = RE::BGSDefaultObjectManager::GetSingleton()->GetObject(a1);
-		logger::debug("Clear location music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
+		REX::DEBUG("Clear location music hook ({})", obj ? Utilities::EDID::GetEditorID(obj) : "NULL");
 #endif
 		const auto response = _clearLocation(a1);
 		if (a1 != RE::BGSDefaultObjectManager::DefaultObject::kDungeonClearedMusic) {

@@ -2,47 +2,70 @@
 
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
+#include "REX/REX.h"
 
+#include <expected>
+#include <unordered_set>
 #include <fstream>
 #include <spdlog/sinks/basic_file_sink.h>
-
-#include <json/json.h>
 
 #include "Plugin.h"
 
 #define DLLEXPORT __declspec(dllexport)
 
-namespace logger = SKSE::log;
+#ifndef NDEBUG
+#define LOG_DEBUG(msg, ...) REX::DEBUG(msg, ##__VA_ARGS__)
+#else
+#define LOG_DEBUG(msg, ...)
+#endif
+
 using namespace std::literals;
 namespace util
 {
-    using SKSE::stl::report_and_fail;
+    [[nodiscard]] constexpr int ascii_tolower(int ch) noexcept
+    {
+        if (ch >= 'A' && ch <= 'Z')
+            ch += 'a' - 'A';
+        return ch;
+    }
+
+    struct iless
+    {
+        using is_transparent = int;
+
+        template <std::ranges::contiguous_range S1, std::ranges::contiguous_range S2>
+            requires(
+        std::is_same_v<std::ranges::range_value_t<S1>, char>&&
+            std::is_same_v<std::ranges::range_value_t<S2>, char>)
+            constexpr bool operator()(S1&& a_str1, S2&& a_str2) const
+        {
+            std::size_t count = std::ranges::size(a_str2);
+            const std::size_t len1 = std::ranges::size(a_str1);
+            const bool shorter = len1 < count;
+            if (shorter)
+                count = len1;
+
+            if (count) {
+                const char* p1 = std::ranges::data(a_str1);
+                const char* p2 = std::ranges::data(a_str2);
+
+                do {
+                    const int ch1 = ascii_tolower(*p1++);
+                    const int ch2 = ascii_tolower(*p2++);
+                    if (ch1 != ch2)
+                        return ch1 < ch2;
+                } while (--count);
+            }
+
+            return shorter;
+        }
+    };
+
+    template <class T>
+    using istring_map = std::map<std::string, T, iless>;
 }
 
 namespace stl {
-    template <class T>
-    void write_thunk_call(std::uintptr_t a_src)
-    {
-        SKSE::AllocTrampoline(14);
-
-        auto& trampoline = SKSE::GetTrampoline();
-        T::func = trampoline.write_call<5>(a_src, T::thunk);
-    }
-
-    template <typename TDest, typename TSource>
-    constexpr auto write_vfunc() noexcept
-    {
-        REL::Relocation<std::uintptr_t> vtbl{ TDest::VTABLE[0] };
-        TSource::func = vtbl.write_vfunc(TSource::idx, TSource::thunk);
-    }
-
-    template <typename T>
-    constexpr auto write_vfunc(const REL::ID variant_id) noexcept
-    {
-        REL::Relocation<std::uintptr_t> vtbl{ variant_id };
-        T::func = vtbl.write_vfunc(T::idx, T::thunk);
-    }
-
     template <typename R, typename... Args>
     inline std::uintptr_t function_ptr(R(*fn)(Args...))
     {
@@ -55,3 +78,17 @@ namespace stl {
         return reinterpret_cast<std::uintptr_t>((void*&)fn);
     }
 }
+
+// Used as a compile guard in certain templated function (see INISettings.h, if present)
+template <class T>
+inline constexpr bool always_false = false;
+
+#define SECTION_SEPARATOR REX::INFO("=========================================================="sv)
+
+#ifdef SKYRIM_AE
+#	define OFFSET(se, ae) ae
+#	define OFFSET_3(se, ae, vr) ae
+#else
+#	define OFFSET(se, ae) se
+#	define OFFSET_3(se, ae, vr) se
+#endif

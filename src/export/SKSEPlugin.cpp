@@ -3,48 +3,20 @@
 #include "settings/INISettings.h"
 #include "settings/JSONSettings.h"
 
-namespace
-{
-	void InitializeLog()
-	{
-		auto path = logger::log_directory();
-		if (!path) {
-			util::report_and_fail("Failed to find standard logging directory"sv);
-		}
-
-		*path /= fmt::format("{}.log"sv, Plugin::NAME);
-		auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
-
-#ifdef DEBUG
-		const auto level = spdlog::level::debug;
-#else 
-		const auto level = spdlog::level::info;
-#endif
-
-		auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
-		log->set_level(level);
-		log->flush_on(level);
-
-		spdlog::set_default_logger(std::move(log));
-		spdlog::set_pattern("[%^%l%$] %v"s);
-	}
-}
-
 extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []()
-	{
-		SKSE::PluginVersionData v{};
+{
+	SKSE::PluginVersionData v{};
 
-		v.PluginVersion(Plugin::VERSION);
-		v.PluginName(Plugin::NAME);
-		v.AuthorName("SeaSparrow"sv);
-		v.UsesAddressLibrary();
-		v.UsesUpdatedStructs();
+	v.PluginVersion(Plugin::VERSION);
+	v.PluginName(Plugin::NAME);
+	v.AuthorName("SeaSparrow"sv);
+	v.UsesAddressLibrary();
+	v.UsesUpdatedStructs();
 
-		return v;
-	}();
+	return v;
+}();
 
-extern "C" DLLEXPORT bool SKSEAPI
-SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
+SKSE_PLUGIN_QUERY(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 {
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
 	a_info->name = Plugin::NAME.data();
@@ -53,12 +25,6 @@ SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 	if (a_skse->IsEditor()) {
 		return false;
 	}
-
-	const auto ver = a_skse->RuntimeVersion();
-	if (ver < SKSE::RUNTIME_1_6_1130) {
-		return false;
-	}
-
 	return true;
 }
 
@@ -75,20 +41,45 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 	}
 }
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
+SKSE_PLUGIN_LOAD(const SKSE::LoadInterface* a_skse)
 {
-	InitializeLog();
-	logger::info("Starting up {} v{}"sv, Plugin::NAME, Plugin::VERSION.string());
-	logger::info("Author: SeaSparrow");
-	logger::info("___________________________________________________");
-
-	SKSE::Init(a_skse);
+	SKSE::InitInfo info;
+	info.log = true;
+	info.hook = true;
+	info.trampoline = true;
+	info.trampolineSize = 84u;
+	
+	SKSE::Init(a_skse, info);
+	REX::INFO("Author: SeaSparrow"sv);
+	SECTION_SEPARATOR;
 
 	const auto ver = a_skse->RuntimeVersion();
-	if (ver < SKSE::RUNTIME_1_6_1130) {
-		logger::error("Unsupported Skyrim version. Only compatible with versions later than 1.6.1130.");
-		logger::info("___________________________________________________");
-		return false;
+
+#ifdef SKYRIM_GOG
+	static constexpr std::array<REL::Version, 4> supported = 
+	{
+		SKSE::RUNTIME_SSE_1_6_1130,
+		SKSE::RUNTIME_SSE_1_6_1170,
+		SKSE::RUNTIME_SSE_1_6_1179,
+		REL::Version(1, 6, 1179, 1) // no idea what this is still
+	};
+#else
+	static constexpr std::array<REL::Version, 2> supported = 
+	{
+		SKSE::RUNTIME_SSE_1_7_104,
+		SKSE::RUNTIME_SSE_1_7_99
+	};	
+#endif
+
+	if ((ver < SKSE::RUNTIME_SSE_LATEST) && (!std::ranges::contains(supported, ver))) {
+		REX::CRITICAL("Game Version: {}"sv, ver.string());
+		REX::CRITICAL("Supported Versions:"sv);
+		for (const auto& allowed : supported) {
+			REX::CRITICAL("  - {}"sv, allowed.string());
+		}
+		REX::FAIL(
+			fmt::format("You are using a version not supported by this plugin. Check the log at (Documents/My Games/Skyrim Special Edition/{}.log for more information."sv, Plugin::NAME)
+		);
 	}
 
 	const auto messaging = SKSE::GetMessagingInterface();

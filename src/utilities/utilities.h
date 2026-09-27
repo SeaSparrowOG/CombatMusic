@@ -39,8 +39,8 @@ namespace Utilities
 				return a_form->GetFormEditorID();
 			default:
 			{
-				static auto tweaks = SKSE::WinAPI::GetModuleHandle(L"po3_Tweaks");
-				static auto func = reinterpret_cast<_GetFormEditorID>(SKSE::WinAPI::GetProcAddress(tweaks, "GetFormEditorID"));
+				static auto tweaks = REX::W32::GetModuleHandleW(L"po3_Tweaks");
+				static auto func = reinterpret_cast<_GetFormEditorID>(REX::W32::GetProcAddress(tweaks, "GetFormEditorID"));
 				if (func) {
 					return func(a_form->formID);
 				}
